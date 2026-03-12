@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+https://go.microsoft.com/fwlink/?LinkID=208121.
+-->
+<Project>
+  <PropertyGroup>
+    <_PublishTargetUrl>D:\Deploy\apirecruitment</_PublishTargetUrl>
+    <History>True|2025-07-21T17:34:44.3906692Z||;True|2025-07-21T20:34:05.2570966+07:00||;True|2025-07-21T20:34:00.3594042+07:00||;True|2025-07-21T20:33:50.1634824+07:00||;True|2025-07-21T20:33:39.5814826+07:00||;True|2025-07-21T19:48:17.1974696+07:00||;True|2025-07-02T20:59:56.9713574+07:00||;True|2025-06-30T10:42:49.8000701+07:00||;True|2025-06-30T10:42:44.6283512+07:00||;True|2025-06-30T10:42:18.8823126+07:00||;True|2025-06-30T10:37:29.6114740+07:00||;True|2025-06-30T10:37:11.7462846+07:00||;</History>
+    <LastFailureDetails />
+  </PropertyGroup>
+</Project>
