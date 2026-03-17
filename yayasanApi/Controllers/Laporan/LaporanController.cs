@@ -252,6 +252,10 @@ namespace yayasanApi.Controllers.Laporan
                         ? eliminasiDict[coa.Kode].Kredit
                         : 0;
 
+                    var saldo = (coa.Kode?.StartsWith("5") ?? false)
+                            ? total - debet - kredit
+                            : total - debet + kredit;
+
                     return new LaporanKonsolidasiDto
                     {
                         KodeYayasan = coa.Kode,
@@ -259,7 +263,7 @@ namespace yayasanApi.Controllers.Laporan
                         Total = total,
                         Debet = debet,
                         Kredit = kredit,
-                        Saldo = total - debet + kredit
+                        Saldo = saldo
                     };
                 })
                 .ToList();
@@ -379,6 +383,19 @@ namespace yayasanApi.Controllers.Laporan
                     decimal debet = eliminasiDict.ContainsKey(coa.Kode) ? eliminasiDict[coa.Kode].Debet : 0;
                     decimal kredit = eliminasiDict.ContainsKey(coa.Kode) ? eliminasiDict[coa.Kode].Kredit : 0;
 
+                    //return new LaporanKonsolidasiDto
+                    //{
+                    //    KodeYayasan = coa.Kode,
+                    //    NamaYayasan = coa.Nama,
+                    //    Total = total,
+                    //    Debet = debet,
+                    //    Kredit = kredit,
+                    //    Saldo = total - debet + kredit
+                    //};
+                    var saldo = (coa.Kode?.StartsWith("5") ?? false)
+                                ? total - debet - kredit
+                                : total - debet + kredit;
+
                     return new LaporanKonsolidasiDto
                     {
                         KodeYayasan = coa.Kode,
@@ -386,7 +403,7 @@ namespace yayasanApi.Controllers.Laporan
                         Total = total,
                         Debet = debet,
                         Kredit = kredit,
-                        Saldo = total - debet + kredit
+                        Saldo = saldo
                     };
                 })
                 .ToList();

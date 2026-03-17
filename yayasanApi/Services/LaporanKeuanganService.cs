@@ -405,6 +405,28 @@ namespace yayasanApi.Services
 
                     var total = g.Sum(x => x.Nilai);
 
+                    //return new LaporanKonsolidasiDto
+                    //{
+                    //    KodeYayasan = g.Key.KodeYayasan,
+                    //    NamaYayasan = g.Key.NamaYayasan,
+
+                    //    Total = total,
+                    //    Debet = debet,
+                    //    Kredit = kredit,
+
+                    //    Saldo = total + debet - kredit,
+
+                    //    RincianPerUnit = g
+                    //        .GroupBy(u => new { u.UnitId, u.Unit })
+                    //        .Select(u => new RincianUnitDto
+                    //        {
+                    //            UnitId = u.Key.UnitId,
+                    //            Unit = u.Key.Unit,
+                    //            Total = u.Sum(x => x.Nilai)
+                    //        })
+                    //        .OrderBy(x => x.Unit)
+                    //        .ToList()
+                    //};
                     return new LaporanKonsolidasiDto
                     {
                         KodeYayasan = g.Key.KodeYayasan,
@@ -414,7 +436,9 @@ namespace yayasanApi.Services
                         Debet = debet,
                         Kredit = kredit,
 
-                        Saldo = total + debet - kredit,
+                        Saldo = g.Key.KodeYayasan.StartsWith("5")
+                            ? total - debet - kredit
+                            : total + debet - kredit,
 
                         RincianPerUnit = g
                             .GroupBy(u => new { u.UnitId, u.Unit })
@@ -426,7 +450,7 @@ namespace yayasanApi.Services
                             })
                             .OrderBy(x => x.Unit)
                             .ToList()
-                    };
+                     };
                 })
                 .OrderBy(x => x.KodeYayasan)
                 .ToList();
