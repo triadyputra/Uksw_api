@@ -34,108 +34,6 @@ namespace yayasanApi.Controllers.Laporan
             _service = service;
         }
 
-        /* Laporan Gabungan */
-        //[ApiKeyAuthorize]
-        //[HttpGet("GetLaporanGabungan")]
-        //public async Task<ActionResult<PaginatedResponse<LaporanGabunganDto>>>
-        //GetLaporanGabungan(
-        //[FromQuery] string? filter = null,
-        //[FromQuery] int page = 1,
-        //[FromQuery] int pageSize = 10)
-        //{
-        //    //if (string.IsNullOrWhiteSpace(filter))
-        //    //    return BadRequest("Parameter 'filter' (periode) wajib diisi.");
-
-        //    // -----------------------------
-        //    // STEP 1 — Group unik untuk paging
-        //    // -----------------------------
-        //    var groupedQuery =
-        //        from lap in _context.LaporanKeuangan
-        //        join map in _context.MapingCoa on lap.Kode equals map.CoaUnit
-        //        join coa in _context.MasterCoa on map.CoaYayasan equals coa.Kode
-        //        where lap.Periode == filter
-        //        group lap by new { coa.Kode, coa.Nama } into g
-        //        select new
-        //        {
-        //            Kode = g.Key.Kode,
-        //            Nama = g.Key.Nama
-        //        };
-
-        //    var total = await groupedQuery.CountAsync();
-
-        //    var pagedGroup = await groupedQuery
-        //        .OrderBy(x => x.Kode)
-        //        .Skip((page - 1) * pageSize)
-        //        .Take(pageSize)
-        //        .ToListAsync();
-
-        //    var kodeList = pagedGroup.Select(x => x.Kode).ToList();
-
-        //    // -----------------------------
-        //    // STEP 2 — Ambil detail sesuai hasil paging
-        //    // -----------------------------
-        //    var data = await (
-        //        from lap in _context.LaporanKeuangan
-        //        join map in _context.MapingCoa on lap.Kode equals map.CoaUnit
-        //        join coa in _context.MasterCoa on map.CoaYayasan equals coa.Kode
-        //        join unit in _context.MasterUnit on lap.UnitId equals unit.Id
-        //        where lap.Periode == filter && kodeList.Contains(coa.Kode)
-        //        select new
-        //        {
-        //            KodeYayasan = coa.Kode,
-        //            NamaYayasan = coa.Nama,
-        //            UnitId = unit.Id,
-        //            Unit = unit.Nama,
-        //            Nilai = lap.Nilai
-        //        }
-        //    )
-        //    .GroupBy(x => new { x.KodeYayasan, x.NamaYayasan })
-        //    .Select(g => new LaporanGabunganDto
-        //    {
-        //        KodeYayasan = g.Key.KodeYayasan,
-        //        NamaYayasan = g.Key.NamaYayasan,
-        //        Total = g.Sum(x => x.Nilai),
-
-        //        RincianPerUnit = g
-        //            .GroupBy(u => new { u.UnitId, u.Unit })
-        //            .Select(u => new RincianUnitDto
-        //            {
-        //                UnitId = u.Key.UnitId,
-        //                Unit = u.Key.Unit,
-        //                Total = u.Sum(x => x.Nilai)
-        //            })
-        //            .ToList()
-        //    })
-        //    .OrderBy(x => x.KodeYayasan)
-        //    .ToListAsync();
-
-        //    // -----------------------------
-        //    // STEP 3 — Return final response
-        //    // -----------------------------
-        //    return Ok(new PaginatedResponse<LaporanGabunganDto>
-        //    {
-        //        Data = data,
-        //        TotalCount = total,
-        //        Page = page,
-        //        PageSize = pageSize,
-        //        TotalPages = (int)Math.Ceiling((double)total / pageSize)
-        //    });
-        //}
-
-        //[HttpGet("export-gabungan")]
-        //public async Task<IActionResult> ExportGabungan([FromQuery] string periode)
-        //{
-        //    var fileBytes = await _service.ExportGabunganExcel(periode);
-        //    var base64 = Convert.ToBase64String(fileBytes);
-
-        //    return Ok(new
-        //    {
-        //        fileName = $"Laporan_Gabungan_{periode}.xlsx",
-        //        fileBase64 = base64,
-        //        contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        //    });
-        //}
-
         [ApiKeyAuthorize]
         [HttpGet("GetLaporanGabungan")]
         public async Task<ActionResult<PaginatedResponse<LaporanGabunganDto>>>
@@ -295,6 +193,19 @@ namespace yayasanApi.Controllers.Laporan
             });
         }
 
+        [HttpGet("export-gabungan-penghasilan")]
+        public async Task<IActionResult> ExportGabunganPenghasilan([FromQuery] string periode, JenisUnit? unit = null)
+        {
+            var fileBytes = await _service.ExportLaporanPenghasilanExcel(periode, unit);
+            var base64 = Convert.ToBase64String(fileBytes);
+
+            return Ok(new
+            {
+                fileName = $"Laporan_Gabungan_penghasilan_{periode}.xlsx",
+                fileBase64 = base64,
+                contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            });
+        }
 
 
         [ApiKeyAuthorize]
@@ -435,6 +346,19 @@ namespace yayasanApi.Controllers.Laporan
             });
         }
 
-     
+        [HttpGet("export-konsolidasi-penghasilan")]
+        public async Task<IActionResult> ExportkonsolidasiPenghasilan([FromQuery] string periode)
+        {
+            var fileBytes = await _service.ExportLaporanPenghasilanExcel(periode);
+            var base64 = Convert.ToBase64String(fileBytes);
+
+            return Ok(new
+            {
+                fileName = $"Laporan_Konsolidasi_penghasilan_{periode}.xlsx",
+                fileBase64 = base64,
+                contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            });
+        }
+
     }
 }
