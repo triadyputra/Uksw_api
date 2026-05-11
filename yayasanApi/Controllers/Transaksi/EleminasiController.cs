@@ -85,8 +85,8 @@ namespace yayasanApi.Controllers.Transaksi
         {
             try
             {
-                if (DataExists(item.Periode, item.Kode))
-                    return Ok(ApiResponse<object>.Error("Kode Akun sudah ada", "400"));
+                //if (DataExists(item.Periode, item.Kode))
+                //    return Ok(ApiResponse<object>.Error("Kode Akun sudah ada", "400"));
 
                 var NamaRek = _context.MasterCoa.Where(x => x.Kode == item.Kode).FirstOrDefault();
                 var addData = new EleminasiKeuangan

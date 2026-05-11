@@ -20,7 +20,104 @@ namespace yayasanApi.Services
             QuestPDF.Settings.License = LicenseType.Community;
         }
 
-        public async Task<List<LaporanKonsolidasiDto>> GetLaporanKonsolidasi(string periode, JenisUnit? jenis = null)
+        //public async Task<List<LaporanKonsolidasiDto>> GetLaporanKonsolidasi(string periode, JenisUnit? jenis = null)
+        //{
+        //    var query =
+        //        from coa in _context.MasterCoa
+
+        //        join map in _context.MapingCoa
+        //            on coa.Kode equals map.CoaYayasan into mapGroup
+        //        from map in mapGroup.DefaultIfEmpty()
+
+        //        join unitMap in _context.MasterUnit
+        //            on map.UnitId equals unitMap.Id into unitGroup
+        //        from unitMap in unitGroup.DefaultIfEmpty()
+
+        //        join lap in _context.LaporanKeuangan
+        //            .Where(l => l.Periode == periode)
+        //            on map.CoaUnit equals lap.Kode into lapGroup
+        //        from lap in lapGroup.DefaultIfEmpty()
+
+        //        where jenis == null || unitMap.Jenis == jenis
+
+        //        select new
+        //        {
+        //            KodeYayasan = coa.Kode,
+        //            NamaYayasan = coa.Nama,
+
+        //            UnitId = unitMap != null ? unitMap.Id : Guid.Empty,
+        //            Unit = unitMap != null ? unitMap.Nama : "-",
+
+        //            Nilai = lap != null ? lap.Nilai : 0
+        //        };
+
+        //    var data = await query.ToListAsync();
+
+        //    // ---------------------------------------
+        //    // ELEMINASI
+        //    // ---------------------------------------
+        //    var eliminasiDict = await _context.EleminasiKeuangan
+        //        .Where(e => e.Periode == periode && e.Jenis == "Konsolidasi")
+        //        .GroupBy(e => e.Kode)
+        //        .Select(g => new
+        //        {
+        //            Kode = g.Key,
+        //            Debet = g.Sum(x => x.Debet),
+        //            Kredit = g.Sum(x => x.Kredit)
+        //        })
+        //        .ToDictionaryAsync(x => x.Kode, x => new { x.Debet, x.Kredit });
+
+        //    // ---------------------------------------
+        //    // GROUPING
+        //    // ---------------------------------------
+        //    var result = data
+        //        .GroupBy(x => new { x.KodeYayasan, x.NamaYayasan })
+        //        .Select(g =>
+        //        {
+        //            decimal debet = 0;
+        //            decimal kredit = 0;
+
+        //            if (eliminasiDict.TryGetValue(g.Key.KodeYayasan, out var e))
+        //            {
+        //                debet = e.Debet;
+        //                kredit = e.Kredit;
+        //            }
+
+        //            var total = g.Sum(x => x.Nilai);
+
+        //            return new LaporanKonsolidasiDto
+        //            {
+        //                KodeYayasan = g.Key.KodeYayasan,
+        //                NamaYayasan = g.Key.NamaYayasan,
+
+        //                Total = total,
+        //                Debet = debet,
+        //                Kredit = kredit,
+
+        //                Saldo = g.Key.KodeYayasan.StartsWith("5")
+        //                    ? total - debet - kredit
+        //                    : total + debet - kredit,
+
+        //                RincianPerUnit = g
+        //                    .GroupBy(u => new { u.UnitId, u.Unit })
+        //                    .Select(u => new RincianUnitDto
+        //                    {
+        //                        UnitId = u.Key.UnitId,
+        //                        Unit = u.Key.Unit,
+        //                        Total = u.Sum(x => x.Nilai)
+        //                    })
+        //                    .OrderBy(x => x.Unit)
+        //                    .ToList()
+        //             };
+        //        })
+        //        .OrderBy(x => x.KodeYayasan)
+        //        .ToList();
+
+        //    return result;
+        //}
+        public async Task<List<LaporanKonsolidasiDto>> GetLaporanKonsolidasi(
+    string periode,
+    JenisUnit? jenis = null)
         {
             var query =
                 from coa in _context.MasterCoa
@@ -57,7 +154,9 @@ namespace yayasanApi.Services
             // ELEMINASI
             // ---------------------------------------
             var eliminasiDict = await _context.EleminasiKeuangan
-                .Where(e => e.Periode == periode && e.Jenis == "Konsolidasi")
+                .Where(e =>
+                    e.Periode == periode &&
+                    e.Jenis == "Konsolidasi")
                 .GroupBy(e => e.Kode)
                 .Select(g => new
                 {
@@ -65,7 +164,9 @@ namespace yayasanApi.Services
                     Debet = g.Sum(x => x.Debet),
                     Kredit = g.Sum(x => x.Kredit)
                 })
-                .ToDictionaryAsync(x => x.Kode, x => new { x.Debet, x.Kredit });
+                .ToDictionaryAsync(
+                    x => x.Kode,
+                    x => new { x.Debet, x.Kredit });
 
             // ---------------------------------------
             // GROUPING
@@ -83,7 +184,29 @@ namespace yayasanApi.Services
                         kredit = e.Kredit;
                     }
 
-                    var total = g.Sum(x => x.Nilai);
+                    decimal total = g.Sum(x => x.Nilai);
+
+                    string digitAwal = g.Key.KodeYayasan?.Substring(0, 1) ?? "";
+
+                    decimal saldo = 0;
+
+                    // Digit pertama 1 dan 5
+                    if (digitAwal == "1" || digitAwal == "5")
+                    {
+                        saldo = total + debet - kredit;
+                    }
+                    // Digit pertama 2,3,4
+                    else if (
+                        digitAwal == "2" ||
+                        digitAwal == "3" ||
+                        digitAwal == "4")
+                    {
+                        saldo = total - debet + kredit;
+                    }
+                    else
+                    {
+                        saldo = total;
+                    }
 
                     return new LaporanKonsolidasiDto
                     {
@@ -93,10 +216,7 @@ namespace yayasanApi.Services
                         Total = total,
                         Debet = debet,
                         Kredit = kredit,
-
-                        Saldo = g.Key.KodeYayasan.StartsWith("5")
-                            ? total - debet - kredit
-                            : total + debet - kredit,
+                        Saldo = saldo,
 
                         RincianPerUnit = g
                             .GroupBy(u => new { u.UnitId, u.Unit })
@@ -108,7 +228,7 @@ namespace yayasanApi.Services
                             })
                             .OrderBy(x => x.Unit)
                             .ToList()
-                     };
+                    };
                 })
                 .OrderBy(x => x.KodeYayasan)
                 .ToList();
@@ -560,6 +680,13 @@ namespace yayasanApi.Services
         }
         public byte[] GeneratePenghasilanPdf(LaporanPrintDto d)
         {
+            string FormatAngka(decimal val)
+            {
+                return val == 0 ? "-" :
+                       val < 0 ? $"({Math.Abs(val):N0})" :
+                       $"{val:N0}";
+            }
+
             return Document.Create(container =>
             {
                 container.Page(page =>
@@ -568,88 +695,75 @@ namespace yayasanApi.Services
                     page.Margin(20);
                     page.DefaultTextStyle(x => x.FontSize(9));
 
-                    // ================= HEADER =================
-                    page.Header().Column(col =>
-                    {
-                        col.Item().Text(d.NamaFaskes)
-                            .FontSize(12)
-                            .Bold();
-
-                        col.Item().Text(d.Alamat)
-                            .FontSize(9);
-
-                        col.Item().PaddingVertical(5)
-                            .LineHorizontal(1);
-                    });
-
-                    // ================= CONTENT =================
                     page.Content().Column(col =>
                     {
-                        // ===== JUDUL =====
-                        col.Item()
-                            .Text("LAPORAN KEUANGAN")
-                            .FontSize(11)
-                            .Bold()
-                            .AlignCenter();
+                        col.Item().AlignCenter().Text(d.NamaFaskes).Bold().FontSize(12);
+                        col.Item().AlignCenter().Text(d.Alamat).Bold().FontSize(10);
 
-                        col.Item()
-                            .Text($"Periode: {d.Periode}")
-                            .AlignCenter();
+                        col.Item().PaddingTop(5);
 
-                        col.Item().PaddingVertical(10);
+                        col.Item().Row(r =>
+                        {
+                            r.RelativeItem().Text("PERIODE").Bold();
+                            r.ConstantItem(150).AlignRight().Text(d.Periode);
+                        });
 
-                        // ================= TABLE =================
+                        col.Item().PaddingVertical(5).LineHorizontal(1);
+
                         col.Item().Table(table =>
                         {
                             table.ColumnsDefinition(c =>
                             {
-                                c.ConstantColumn(100); // kode
-                                c.RelativeColumn();    // nama
-                                c.ConstantColumn(120); // nilai
+                                c.ConstantColumn(80);
+                                c.RelativeColumn();
+                                c.ConstantColumn(120);
                             });
 
-                            // ===== HEADER =====
                             table.Header(header =>
                             {
-                                header.Cell().Border(0.5f).Padding(4)
-                                    .Text("Kode").SemiBold();
+                                void HeaderCell(string text, bool alignRight = false)
+                                {
+                                    var cell = header.Cell()
+                                        .Border(0.5f)
+                                        .PaddingVertical(4)
+                                        .PaddingHorizontal(4)
+                                        .Background("#d9d9d9");
 
-                                header.Cell().Border(0.5f).Padding(4)
-                                    .Text("Nama").SemiBold();
+                                    if (alignRight)
+                                        cell.AlignRight().Text(text).SemiBold().FontSize(8);
+                                    else
+                                        cell.Text(text).SemiBold().FontSize(8);
+                                }
 
-                                header.Cell().Border(0.5f).Padding(4)
-                                    .AlignRight()
-                                    .Text("Jumlah").SemiBold();
+                                HeaderCell("Kode");
+                                HeaderCell("Nama");
+                                HeaderCell("Jumlah", true);
                             });
 
-                            // ===== DATA =====
                             foreach (var item in d.Items)
                             {
                                 bool isHeader = item.Level <= 1;
-                                bool isTotal = item.Nama.Contains("TOTAL") || item.Nama.Contains("SISA");
+                                bool isTotal = item.Nama != null && (item.Nama.Contains("TOTAL") || item.Nama.Contains("SISA") || item.Nama.Contains("KENAIKAN"));
 
-                                // KODE
-                                var kode = table.Cell().Border(0.5f).Padding(3)
+                                string indent = new string(' ', item.Level * 3);
+
+                                var kodeCell = table.Cell().Border(0.5f).Padding(2)
                                     .Text(item.Kode ?? "");
 
-                                // NAMA (indent)
-                                var nama = table.Cell().Border(0.5f).Padding(3)
-                                    .Text(new string(' ', item.Level * 4) + item.Nama);
+                                var namaCell = table.Cell().Border(0.5f).Padding(2)
+                                    .Text($"{indent}{item.Nama}");
 
-                                // NILAI
-                                var nilai = table.Cell().Border(0.5f).Padding(3)
+                                var nilaiCell = table.Cell().Border(0.5f).Padding(2)
                                     .AlignRight()
-                                    .Text(item.Nilai != 0 ? $"Rp {item.Nilai:N0}" : "");
+                                    .Text(FormatAngka(item.Nilai));
 
-                                // BOLD RULE
                                 if (isHeader || isTotal)
                                 {
-                                    kode.SemiBold();
-                                    nama.SemiBold();
-                                    nilai.SemiBold();
+                                    kodeCell.SemiBold();
+                                    namaCell.SemiBold();
+                                    nilaiCell.SemiBold();
                                 }
 
-                                // GARIS TOTAL
                                 if (isTotal)
                                 {
                                     table.Cell().ColumnSpan(3)
@@ -659,15 +773,15 @@ namespace yayasanApi.Services
                             }
                         });
 
-                        // ================= FOOTER =================
                         col.Item().PaddingTop(30)
                             .AlignRight()
-                            .Column(c =>
-                            {
-                                c.Item().Text("Mengetahui");
-                                c.Item().PaddingTop(40)
-                                    .Text("____________________");
-                            });
+                            .Text("Mengetahui\n\n\n____________________");
+                    });
+
+                    page.Footer().AlignCenter().Text(x =>
+                    {
+                        x.Span("Halaman ");
+                        x.CurrentPageNumber();
                     });
                 });
 
@@ -704,8 +818,6 @@ namespace yayasanApi.Services
 
         public byte[] GenerateKonsolidasiPdfStyleExcel(LaporanKonsolidasiPrintDto d)
         {
-            var data = BuildHierarchy(d.Items);
-
             string FormatAngka(decimal val)
             {
                 return val == 0 ? "-" :
@@ -717,75 +829,101 @@ namespace yayasanApi.Services
             {
                 container.Page(page =>
                 {
-                    page.Size(PageSizes.A4);
+                    page.Size(PageSizes.A4.Landscape());
                     page.Margin(20);
                     page.DefaultTextStyle(x => x.FontSize(9));
 
                     page.Content().Column(col =>
                     {
-                        // HEADER
                         col.Item().AlignCenter().Text(d.NamaFaskes).Bold().FontSize(12);
-                        col.Item().AlignCenter().Text(d.Alamat).Bold();
+                        col.Item().AlignCenter().Text(d.Alamat).Bold().FontSize(10);
 
-                        col.Item().PaddingTop(10);
+                        col.Item().PaddingTop(5);
 
-                        col.Item().Row(r =>
-                        {
-                            r.RelativeItem().Text("PERIODE").Bold();
-                            r.ConstantItem(150).AlignRight().Text(d.Periode);
-                        });
+                        col.Item().AlignCenter()
+                            .Text($"Periode: {d.Periode}")
+                            .FontSize(9);
 
                         col.Item().PaddingVertical(5).LineHorizontal(1);
 
-                        col.Item().Text("POSISI KEUANGAN").Bold();
-
-                        // TABLE
                         col.Item().Table(table =>
                         {
                             table.ColumnsDefinition(c =>
                             {
-                                c.ConstantColumn(90);
+                                c.ConstantColumn(70);
                                 c.RelativeColumn();
-                                c.ConstantColumn(120);
+                                c.ConstantColumn(90);
+                                c.ConstantColumn(90);
+                                c.ConstantColumn(90);
+                                c.ConstantColumn(100);
                             });
 
-                            foreach (var item in data)
+                            table.Header(header =>
                             {
-                                int level = GetLevel(item.KodeYayasan);
-                                bool isHeader = level <= 1;
+                                void HeaderCell(string text, bool alignRight = false)
+                                {
+                                    var cell = header.Cell()
+                                        .Border(0.5f)
+                                        .PaddingVertical(4)
+                                        .PaddingHorizontal(4)
+                                        .Background("#d9d9d9");
 
-                                var kode = table.Cell().Padding(2)
+                                    if (alignRight)
+                                        cell.AlignRight().Text(text).SemiBold().FontSize(8);
+                                    else
+                                        cell.Text(text).SemiBold().FontSize(8);
+                                }
+
+                                HeaderCell("Kode");
+                                HeaderCell("Nama");
+                                HeaderCell("Total", true);
+                                HeaderCell("Debet", true);
+                                HeaderCell("Kredit", true);
+                                HeaderCell("Saldo", true);
+                            });
+
+                            string digitAwal = "";
+                            string prevGroup = "";
+
+                            foreach (var item in d.Items)
+                            {
+                                digitAwal = item.KodeYayasan?.Substring(0, 1) ?? "";
+                                bool isHeader = digitAwal != prevGroup && digitAwal != "";
+                                prevGroup = digitAwal;
+
+                                var kodeCell = table.Cell().Border(0.5f).Padding(3)
                                     .Text(item.KodeYayasan);
 
-                                var nama = table.Cell()
-                                    .PaddingLeft(level * 10)
+                                var namaCell = table.Cell().Border(0.5f).Padding(3)
                                     .Text(item.NamaYayasan);
 
-                                var nilai = table.Cell()
+                                var totalCell = table.Cell().Border(0.5f).Padding(3)
+                                    .AlignRight()
+                                    .Text(FormatAngka(item.Total));
+
+                                var debetCell = table.Cell().Border(0.5f).Padding(3)
+                                    .AlignRight()
+                                    .Text(FormatAngka(item.Debet));
+
+                                var kreditCell = table.Cell().Border(0.5f).Padding(3)
+                                    .AlignRight()
+                                    .Text(FormatAngka(item.Kredit));
+
+                                var saldoCell = table.Cell().Border(0.5f).Padding(3)
                                     .AlignRight()
                                     .Text(FormatAngka(item.Saldo));
 
                                 if (isHeader)
                                 {
-                                    kode.Bold();
-                                    nama.Bold();
-                                    nilai.Bold();
-                                }
-
-                                // garis section
-                                if (level == 0)
-                                {
-                                    table.Cell().ColumnSpan(3)
-                                        .BorderTop(1)
-                                        .PaddingTop(2);
+                                    kodeCell.Bold();
+                                    namaCell.Bold();
+                                    totalCell.Bold();
+                                    debetCell.Bold();
+                                    kreditCell.Bold();
+                                    saldoCell.Bold();
                                 }
                             }
                         });
-
-                        // FOOTER
-                        col.Item().PaddingTop(30)
-                            .AlignRight()
-                            .Text("Mengetahui\n\n\n__________________");
                     });
 
                     page.Footer().AlignCenter().Text(x =>

@@ -136,35 +136,80 @@ namespace yayasanApi.Controllers.Laporan
             // STEP 4 — FINAL OUTPUT
             // ------------------------------------------
             var finalData = pagedGroup
-                .Select(coa =>
+            .Select(coa =>
+            {
+                decimal total = konsolidasiDict.ContainsKey(coa.Kode)
+                    ? konsolidasiDict[coa.Kode]
+                    : 0;
+
+                decimal debet = eliminasiDict.ContainsKey(coa.Kode)
+                    ? eliminasiDict[coa.Kode].Debet
+                    : 0;
+
+                decimal kredit = eliminasiDict.ContainsKey(coa.Kode)
+                    ? eliminasiDict[coa.Kode].Kredit
+                    : 0;
+
+                decimal saldo = 0;
+
+                var digitAwal = coa.Kode?.Substring(0, 1);
+
+                // Digit pertama 1 dan 5
+                if (digitAwal == "1" || digitAwal == "5")
                 {
-                    decimal total = konsolidasiDict.ContainsKey(coa.Kode)
-                        ? konsolidasiDict[coa.Kode]
-                        : 0;
+                    saldo = total + debet - kredit;
+                }
+                // Digit pertama 2,3,4
+                else if (digitAwal == "2" || digitAwal == "3" || digitAwal == "4")
+                {
+                    saldo = total - debet + kredit;
+                }
+                else
+                {
+                    saldo = total;
+                }
 
-                    decimal debet = eliminasiDict.ContainsKey(coa.Kode)
-                        ? eliminasiDict[coa.Kode].Debet
-                        : 0;
+                return new LaporanKonsolidasiDto
+                {
+                    KodeYayasan = coa.Kode,
+                    NamaYayasan = coa.Nama,
+                    Total = total,
+                    Debet = debet,
+                    Kredit = kredit,
+                    Saldo = saldo
+                };
+            })
+            .ToList();
+            //var finalData = pagedGroup
+            //    .Select(coa =>
+            //    {
+            //        decimal total = konsolidasiDict.ContainsKey(coa.Kode)
+            //            ? konsolidasiDict[coa.Kode]
+            //            : 0;
 
-                    decimal kredit = eliminasiDict.ContainsKey(coa.Kode)
-                        ? eliminasiDict[coa.Kode].Kredit
-                        : 0;
+            //        decimal debet = eliminasiDict.ContainsKey(coa.Kode)
+            //            ? eliminasiDict[coa.Kode].Debet
+            //            : 0;
 
-                    var saldo = (coa.Kode?.StartsWith("5") ?? false)
-                            ? total - debet - kredit
-                            : total - debet + kredit;
+            //        decimal kredit = eliminasiDict.ContainsKey(coa.Kode)
+            //            ? eliminasiDict[coa.Kode].Kredit
+            //            : 0;
 
-                    return new LaporanKonsolidasiDto
-                    {
-                        KodeYayasan = coa.Kode,
-                        NamaYayasan = coa.Nama,
-                        Total = total,
-                        Debet = debet,
-                        Kredit = kredit,
-                        Saldo = saldo
-                    };
-                })
-                .ToList();
+            //        var saldo = (coa.Kode?.StartsWith("5") ?? false)
+            //                ? total - debet - kredit
+            //                : total - debet + kredit;
+
+            //        return new LaporanKonsolidasiDto
+            //        {
+            //            KodeYayasan = coa.Kode,
+            //            NamaYayasan = coa.Nama,
+            //            Total = total,
+            //            Debet = debet,
+            //            Kredit = kredit,
+            //            Saldo = saldo
+            //        };
+            //    })
+            //    .ToList();
 
             // ------------------------------------------
             // STEP 5 — RETURN
@@ -260,36 +305,84 @@ namespace yayasanApi.Controllers.Laporan
             // STEP 4 — FINAL OUTPUT
             // -----------------------------
             var finalData = pagedGroup
-                .Select(coa =>
+            .Select(coa =>
+            {
+                decimal total = konsolidasiDict.ContainsKey(coa.Kode)
+                    ? konsolidasiDict[coa.Kode]
+                    : 0;
+
+                decimal debet = eliminasiDict.ContainsKey(coa.Kode)
+                    ? eliminasiDict[coa.Kode].Debet
+                    : 0;
+
+                decimal kredit = eliminasiDict.ContainsKey(coa.Kode)
+                    ? eliminasiDict[coa.Kode].Kredit
+                    : 0;
+
+                string digitAwal = coa.Kode?.Substring(0, 1) ?? "";
+
+                decimal saldo = 0;
+
+                // Digit pertama 1 dan 5
+                if (digitAwal == "1" || digitAwal == "5")
                 {
-                    decimal total = konsolidasiDict.ContainsKey(coa.Kode) ? konsolidasiDict[coa.Kode] : 0;
-                    decimal debet = eliminasiDict.ContainsKey(coa.Kode) ? eliminasiDict[coa.Kode].Debet : 0;
-                    decimal kredit = eliminasiDict.ContainsKey(coa.Kode) ? eliminasiDict[coa.Kode].Kredit : 0;
+                    saldo = total + debet - kredit;
+                }
+                // Digit pertama 2,3,4
+                else if (
+                    digitAwal == "2" ||
+                    digitAwal == "3" ||
+                    digitAwal == "4")
+                {
+                    saldo = total - debet + kredit;
+                }
+                else
+                {
+                    saldo = total;
+                }
 
-                    //return new LaporanKonsolidasiDto
-                    //{
-                    //    KodeYayasan = coa.Kode,
-                    //    NamaYayasan = coa.Nama,
-                    //    Total = total,
-                    //    Debet = debet,
-                    //    Kredit = kredit,
-                    //    Saldo = total - debet + kredit
-                    //};
-                    var saldo = (coa.Kode?.StartsWith("5") ?? false)
-                                ? total - debet - kredit
-                                : total - debet + kredit;
+                return new LaporanKonsolidasiDto
+                {
+                    KodeYayasan = coa.Kode,
+                    NamaYayasan = coa.Nama,
+                    Total = total,
+                    Debet = debet,
+                    Kredit = kredit,
+                    Saldo = saldo
+                };
+            })
+            .ToList();
+            //var finalData = pagedGroup
+            //    .Select(coa =>
+            //    {
+            //        decimal total = konsolidasiDict.ContainsKey(coa.Kode) ? konsolidasiDict[coa.Kode] : 0;
+            //        decimal debet = eliminasiDict.ContainsKey(coa.Kode) ? eliminasiDict[coa.Kode].Debet : 0;
+            //        decimal kredit = eliminasiDict.ContainsKey(coa.Kode) ? eliminasiDict[coa.Kode].Kredit : 0;
 
-                    return new LaporanKonsolidasiDto
-                    {
-                        KodeYayasan = coa.Kode,
-                        NamaYayasan = coa.Nama,
-                        Total = total,
-                        Debet = debet,
-                        Kredit = kredit,
-                        Saldo = saldo
-                    };
-                })
-                .ToList();
+            //        //return new LaporanKonsolidasiDto
+            //        //{
+            //        //    KodeYayasan = coa.Kode,
+            //        //    NamaYayasan = coa.Nama,
+            //        //    Total = total,
+            //        //    Debet = debet,
+            //        //    Kredit = kredit,
+            //        //    Saldo = total - debet + kredit
+            //        //};
+            //        var saldo = (coa.Kode?.StartsWith("5") ?? false)
+            //                    ? total - debet - kredit
+            //                    : total - debet + kredit;
+
+            //        return new LaporanKonsolidasiDto
+            //        {
+            //            KodeYayasan = coa.Kode,
+            //            NamaYayasan = coa.Nama,
+            //            Total = total,
+            //            Debet = debet,
+            //            Kredit = kredit,
+            //            Saldo = saldo
+            //        };
+            //    })
+            //    .ToList();
 
             // -----------------------------
             // STEP 5 — RETURN
